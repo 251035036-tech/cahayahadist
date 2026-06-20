@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Integrasi - Studi Hadis Digital</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #1b4332;
+            --secondary-color: #2d6a4f;
+            --accent-color: #52b788;
+            --dark-bg: #0d1f18;
+            --light-bg: #f4f9f4;
+            --text-light: #ffffff;
+            --text-dark: #2d3748;
+            --sidebar-width: 300px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { display: flex; background-color: var(--light-bg); height: 100vh; overflow: hidden; }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--primary-color); color: var(--text-light);
+            align-items: center; justify-content: space-between; padding: 0 20px; z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .menu-toggle { background: none; border: none; color: var(--text-light); font-size: 24px; cursor: pointer; }
+
+        /* Sidebar Left Navigation */
+        .sidebar {
+            width: var(--sidebar-width); background-color: var(--primary-color); color: var(--text-light);
+            height: 100vh; display: flex; flex-direction: column; transition: all 0.3s ease; z-index: 999; flex-shrink: 0;
+        }
+        .sidebar-brand { padding: 20px; text-align: center; background-color: var(--dark-bg); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .user-info { padding: 15px; background: rgba(255, 255, 255, 0.05); font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .user-info p { margin-bottom: 4px; }
+
+        /* Nested Menu Style */
+        .nav-menu { list-style: none; overflow-y: auto; flex: 1; padding: 10px 0; }
+        .nav-item { width: 100%; display: block; }
+        
+        .nav-link {
+            display: flex; align-items: center; justify-content: space-between; padding: 12px 20px;
+            color: rgba(255,255,255,0.8); text-decoration: none; transition: all 0.2s ease; cursor: pointer;
+            font-size: 14px; border-left: 4px solid transparent; user-select: none;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--text-light); background-color: var(--secondary-color); border-left-color: var(--accent-color); }
+        .nav-link div { display: flex; align-items: center; gap: 10px; pointer-events: none; } /* Mencegah bug klik icon */
+
+        .submenu, .sub-submenu { list-style: none; background: rgba(0, 0, 0, 0.15); display: none; overflow: hidden; }
+        .submenu .nav-link { padding-left: 35px; font-size: 13px; }
+        .sub-submenu { background: rgba(0, 0, 0, 0.25); }
+        .sub-submenu .nav-link { padding-left: 55px; font-size: 12px; }
+
+        /* Utility State Classes */
+        .show-menu { display: block !important; }
+        .rotate-icon { transform: rotate(90deg); }
+        .chevron { transition: transform 0.2s ease; font-size: 11px; pointer-events: none; }
+
+        /* Main Workspace Content Right Side */
+        .content-container { flex: 1; height: 100vh; overflow-y: auto; padding: 40px; background: #ffffff; }
+        .tab-content { display: none; max-width: 900px; margin: 0 auto; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Content Styling Typography */
+        .welcome-card { background: linear-gradient(135deg, #1b4332, #2d6a4f); color: white; padding: 35px; border-radius: 8px; margin-bottom: 30px; text-align: center; }
+        h2 { color: #1b4332; border-left: 5px solid #52b788; padding-left: 12px; margin-bottom: 20px; font-size: 24px; }
+        h3 { font-size: 18px; background: #f4f9f4; padding: 10px; border-radius: 4px; margin: 20px 0 10px 0; color: #2d6a4f; border-bottom: 1px solid #cbd5e1; }
+        p { margin-bottom: 12px; color: #334155; }
+        
+        .meta-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px; }
+        .meta-table th, .meta-table td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; }
+        .meta-table th { background: #2d6a4f; color: white; }
+        .meta-table tr:nth-child(even) { background: #f8fafc; }
+
+        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        .card { border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .card.kelebihan { border-top: 4px solid #52b788; }
+        .card.kekurangan { border-top: 4px solid #ef4444; }
+        
+        ul, ol { padding-left: 20px; margin-bottom: 15px; color: #334155; }
+        li { margin-bottom: 6px; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .badge.success { background: #d1fae5; color: #065f46; }
+        .badge.danger { background: #fee2e2; color: #991b1b; }
+        .score-box { background: #0d1f18; color: white; padding: 15px; border-radius: 6px; display: inline-block; margin-top: 10px; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; padding-top: 60px; }
+            .mobile-header { display: flex; }
+            .sidebar { position: fixed; left: -300px; top: 60px; height: calc(100vh - 60px); }
+            .sidebar.open { left: 0; }
+            .content-container { height: calc(100vh - 60px); padding: 20px; }
+            .grid-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Mobile Toggle -->
+    <div class="mobile-header">
+        <h3>Portal Hadis Nurhasanah</h3>
+        <button class="menu-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+    </div>
+
+    <!-- SIDEBAR KIRI (Nested Menu) -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-brand"><h3>PORTAL HADIS INTEGRASI</h3></div>
+        <div class="user-info">
+            <p><strong><i class="fas fa-user"></i> Nama:</strong> Nurhasanah</p>
+            <p><strong><i class="fas fa-id-card"></i> NIM:</strong> 251305036</p>
+            <p><strong><i class="fas fa-university"></i> Kampus:</strong> UIN SMH Banten</p>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a class="nav-link sub-item active" data-target="beranda">
+                    <div><i class="fas fa-home"></i> <span>Beranda Utama</span></div>
+                </a>
+            </li>
+
+            <!-- INDEX 1: E-BOOK SAYA -->
+            <li class="nav-item">
+                <a class="nav-link has-dropdown">
+                    <div><i class="fas fa-book-open"></i> <span>1. Index E-Book Saya</span></div>
+                    <i class="fas fa-chevron-right chevron"></i>
+                </a>
+                <ul class="submenu">
+                    <li><a class="nav-link sub-item" data-target="my-ebook-info">Muqaddimah & Identitas</a></li>
+                    <li><a class="nav-link sub-item" data-target="my-ebook-bab1">Bab I: Pendidikan Akhlak</a></li>
+                    <li><a class="nav-link sub-item" data-target="my-ebook-bab2">Bab II: Pendidikan Sosial</a></li>
+                </ul>
+            </li>
+
+            <!-- INDEX 2: REVIEW E-BOOK LAIN -->
+            <li class="nav-item">
+                <a class="nav-link has-dropdown">
+                    <div><i class="fas fa-book"></i> <span>2. Review E-Book</span></div>
+                    <i class="fas fa-chevron-right chevron"></i>
+                </a>
+                <ul class="submenu">
+                    <li><a class="nav-link sub-item" data-target="review-ebook-content">Studi Al-Qur'an & Hadis</a></li>
+                </ul>
+            </li>
+
+            <!-- INDEX 3: REVIEW WEBSITE (3 Web Lengkap) -->
+            <li class="nav-item">
+                <a class="nav-link has-dropdown">
+                    <div><i class="fas fa-globe"></i> <span>3. Review Website (3 Web)</span></div>
+                    <i class="fas fa-chevron-right chevron"></i>
+                </a>
+                <ul class="submenu">
+                    <li class="nav-item">
+                        <a class="nav-link has-dropdown">
+                            <div><i class="fas fa-layer-group"></i> <span>Web 1: Hadits.id</span></div>
+                            <i class="fas fa-chevron-right chevron"></i>
+                        </a>
+                        <ul class="sub-submenu">
+                            <li><a class="nav-link sub-item" data-target="web-haditsid">Analisis & Fitur</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link has-dropdown">
+                            <div><i class="fas fa-layer-group"></i> <span>Web 2: Hadits Tazkia</span></div>
+                            <i class="fas fa-chevron-right chevron"></i>
+                        </a>
+                        <ul class="sub-submenu">
+                            <li><a class="nav-link sub-item" data-target="web-tazkia">Analisis & Fitur</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link has-dropdown">
+                            <div><i class="fas fa-layer-group"></i> <span>Web 3: CariHadis.com</span></div>
+                            <i class="fas fa-chevron-right chevron"></i>
+                        </a>
+                        <ul class="sub-submenu">
+                            <li><a class="nav-link sub-item" data-target="web-carihadis">Analisis & Fitur</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- INDEX 4: REVIEW ANDROID APP -->
+            <li class="nav-item">
+                <a class="nav-link has-dropdown">
+                    <div><i class="fab fa-android"></i> <span>4. Review Android App</span></div>
+                    <i class="fas fa-chevron-right chevron"></i>
+                </a>
+                <ul class="submenu">
+                    <li><a class="nav-link sub-item" data-target="android-app">Ensiklopedi Hadits</a></li>
+                </ul>
+            </li>
+
+            <!-- INDEX 5: REVIEW WORKSPACE DESKTOP -->
+            <li class="nav-item">
+                <a class="nav-link has-dropdown">
+                    <div><i class="fas fa-desktop"></i> <span>5. Review UI/UX Desktop</span></div>
+                    <i class="fas fa-chevron-right chevron"></i>
+                </a>
+                <ul class="submenu">
+                    <li><a class="nav-link sub-item" data-target="desktop-uiux">Analisis Windows 11</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <!-- AREA KONTEN UTAMA SEBELAH KANAN -->
+    <div class="content-container">
+        
+        <!-- TAB 0: BERANDA & BIODATA -->
+        <div id="beranda" class="tab-content active">
+            <div class="welcome-card">
+                <h1>Portal Tugas Terintegrasi Studi Hadis Digital</h1>
+                <p>Seluruh dokumen review (E-book, 3 Website, Aplikasi Android, dan Dokumentasi Desktop) beserta E-Book Kitab Hadis Akhlak milik Anda telah disatukan penuh di sini.</p>
+            </div>
+            
+            <h2>Tentang Penulis / Reviewer</h2>
+            <table class="meta-table">
+                <tr><th>Biodata</th><th>Informasi Lengkap</th></tr>
+                <tr><td>Nama Lengkap</td><td>Nurhasanah</td></tr>
+                <tr><td>Umur</td><td>18 Tahun</td></tr>
+                <tr><td>Pendidikan Sekarang</td><td>Prodi Ilmu Hadis - UIN Sultan Maulana Hasanuddin Banten</td></tr>
+                <tr><td>Asal Sekolah</td><td>Pondok Pesantren Al-Badar 2 (Tangerang)</td></tr>
+                <tr><td>Pesantren Sekarang</td><td>Pondok Salafiyah Riyadhul Awamil (Kabupaten Serang, Banten)</td></tr>
+                <tr><td>Hobi & Aktivitas</td><td>Menulis, menghafal Al-Qur'an dan Kitab Klasik, Istifalan, serta Muhadharah.</td></tr>
+            </table>
+            <p><em>*Catatan Historis: Pondok Pesantren Riyadhul Awamil didirikan pada tahun 1995, konsisten memadukan sistem pembelajaran klasik (salafiyah) dengan khazanah modern guna melahirkan generasi ulama pendidik.</em></p>
+        </div>
+
+        <!-- TAB 1A: MY EBOOK MUQADDIMAH -->
+        <div id="my-ebook-info" class="tab-content">
+            <h2>E-Book Saya: Hadis Nabi tentang Pendidikan Akhlak & Sosial</h2>
+            <div style="background: #e2e8f0; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                <strong>Gaya Penyusunan:</strong> Mengikuti metodologi tematik mirip Kitab <em>Bulughul Maram</em> (hanya memuat teks hadis dan terjemahan langsung tanpa penjelasan panjang).
+            </div>
+            <h3>Muqaddimah</h3>
+            <p style="font-size: 18px; text-align: center; font-style: italic; background: #f8fafc; padding: 15px; border-radius: 6px;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+            <p>Segala puji bagi Allah Swt. yang telah mengutus Nabi Muhammad ﷺ sebagai teladan terbaik dalam pembinaan akhlak dan kehidupan sosial. Shalawat dan salam semoga senantiasa tercurah kepada beliau, keluarga, sahabat, dan pengikutnya hingga akhir zaman.</p>
+        </div>
+
+        <!-- TAB 1B: MY EBOOK BAB I -->
+        <div id="my-ebook-bab1" class="tab-content">
+            <h2>BAB I: Pendidikan Akhlak</h2>
+            <h3>Daftar Materi Matan Hadis Pokok:</h3>
+            <ol>
+                <li><strong>Keutamaan Akhlak Mulia:</strong> Penegasan timbangan terberat di akhirat adalah ketakwaan dan perangai yang baik.</li>
+                <li><strong>Misi Kenabian:</strong> <em>"Innama bu'ithtu li'utammima makarimal akhlaq"</em> (Sesungguhnya aku diutus hanya untuk menyempurnakan akhlak).</li>
+                <li><strong>Berkata Baik atau Diam:</strong> Konsep menjaga lisan sebagai indikator keimanan kepada Allah dan Hari Akhir.</li>
+                <li><strong>Kejujuran & Amanah:</strong> Urgensi memegang teguh kebenaran serta larangan berkhianat.</li>
+                <li><strong>Sifat Malu & Kasih Sayang:</strong> Sifat malu sebagai bagian dari cabang iman.</li>
+                <li><strong>Larangan Marah & Menjaga Hati:</strong> Wasiat Rasulullah <em>"La taghdob walakal jannah"</em> (Jangan marah, bagimu surga) serta pembersihan hati dari penyakit hasad.</li>
+            </ol>
+        </div>
+
+        <!-- TAB 1C: MY EBOOK BAB II -->
+        <div id="my-ebook-bab2" class="tab-content">
+            <h2>BAB II: Pendidikan Sosial</h2>
+            <h3>Implementasi Hadis Interaksi Sosial:</h3>
+            <ul>
+                <li><strong>Persaudaraan & Tolong-Menolong:</strong> Perumpamaan sesama muslim seperti satu bangunan yang saling menguatkan satu sama lain.</li>
+                <li><strong>Silaturahmi & Tetangga:</strong> Ancaman pemutus hubungan silaturahmi serta kewajiban memuliakan tetangga terdekat.</li>
+                <li><strong>Memberi Manfaat & Larangan Menyakiti:</strong> Prinsip <em>"Khairunnas anfa'uhum linnas"</em> (Sebaik-baik manusia adalah yang paling bermanfaat bagi orang lain).</li>
+                <li><strong>Menebarkan Salam:</strong> Metode menumbuhkan rasa saling mencintai di antara umat Islam melalui ucapan salam.</li>
+            </ul>
+        </div>
+
+        <!-- TAB 2: REVIEW E-BOOK LAIN -->
+        <div id="review-ebook-content" class="tab-content">
+            <h2>Review E-Book: Studi Al-Qur'an dan Hadis</h2>
+            <p style="color: #666; font-style: italic;">Sumber Berkas: review1 nur.pdf | Resensi Terhadap Buku Dr. Hj. Umi Sumbulah, M.Ag</p>
+            <table class="meta-table">
+                <tr><th>Atribut Buku</th><th>Keterangan</th></tr>
+                <tr><td>Penerbit</td><td>UIN-Maliki Press (Cetakan Ketiga, 2020)</td></tr>
+                <tr><td>Ukuran & Halaman</td><td>16 × 24 cm. XII + 404 hlm. No ISBN: 978-602-1190-44-9</td></tr>
+            </table>
+            <h3>Urgensi Pembahasan</h3>
+            <p>Hadis bertindak sebagai instrumen kontekstualisasi operasional dari ayat Al-Qur'an yang global. Memiliki 4 fungsi dasar utama yakni: <em>Bayan al-Ta'kid</em> (penguat), <em>Taqyid/Tafshil</em> (merinci), <em>Tasyri'</em> (pembentuk hukum baru), dan fungsi kontroversial berupa <em>Naskh</em> (penghapusan).</p>
+        </div>
+
+        <!-- TAB 3A: WEBSITE 1 (HADITS.ID) -->
+        <div id="web-haditsid" class="tab-content">
+            <h2>Website 1: https://www.hadits.id/</h2>
+            <p>Fungsi utama sebagai mesin pencari kutipan teks hadis terintegrasi kelompok Kutubus Sittah dan tambahan Musnad Ahmad.</p>
+            <div class="grid-container">
+                <div class="card kelebihan">
+                    <h4><span class="badge success">Kelebihan</span></h4>
+                    <p style="margin-top:10px;">Proses pelacakan sanad Shahih Muslim sangat rapi, dilengkapi penanda visual garis kitman pembagian bab secara berjenjang.</p>
+                </div>
+                <div class="card kekurangan">
+                    <h4><span class="badge danger">Kekurangan</span></h4>
+                    <p style="margin-top:10px;">Barcode donasi QRIS dipatok nominal statis (Rp 10.000 dan Rp 30.000) sehingga user tidak fleksibel memasukkan nominal sendiri.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3B: WEBSITE 2 (TAZKIA) -->
+        <div id="web-tazkia" class="tab-content">
+            <h2>Website 2: https://hadits.tazkia.ac.id/</h2>
+            <p>Platform pencarian berbasis web terfokus pada materi pembersihan jiwa (Tazkiyah al-Nafs) dan implementasi muamalah universitas.</p>
+            <h3>Fitur Navigasi</h3>
+            <ul>
+                <li><strong>Mode Layar:</strong> Tombol pengaturan tema (Dark Mode/Light Mode).</li>
+                <li><strong>Menu Kedudukan:</strong> Pengelompokan langsung derajat keaslian (Sahih, Hasan, Da'if).</li>
+                <li><strong>Diagram Sanad:</strong> Representasi grafis silsilah matan perawi hadis.</li>
+            </ul>
+        </div>
+
+        <!-- TAB 3C: WEBSITE 3 (CARIHADIS.COM) -->
+        <div id="web-carihadis" class="tab-content">
+            <h2>Website 3: https://carihadis.com/ (Lengkap)</h2>
+            <p>Mesin indeks pencarian hadis kilat berbasis kata kunci kontekstual bahasa Indonesia dan teks Arab.</p>
+            <div class="grid-container">
+                <div class="card kelebihan">
+                    <h4><span class="badge success">Kelebihan</span></h4>
+                    <p style="margin-top:10px;">Proses loading indeks kata sangat cepat, mampu melacak satu kata kunci ke ribuan nomor hadis di berbagai kitab secara simultan.</p>
+                </div>
+                <div class="card kekurangan">
+                    <h4><span class="badge danger">Kekurangan</span></h4>
+                    <p style="margin-top:10px;">Tampilan UI tergolong sangat klasik dan minim visualisasi modern, terkadang memunculkan iklan banner luar yang mengganggu estetika membaca.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: ANDROID APP -->
+        <div id="android-app" class="tab-content">
+            <h2>Aplikasi Android: Ensiklopedi Hadits</h2>
+            <p><strong>Ukuran Berkas:</strong> 307 MB | Menyediakan akses database digital 9 kitab induk (Kutubut Tis'ah).</p>
+            <h3>Inovasi Sistem</h3>
+            <p>Dilengkapi fitur <strong>Tanya AI</strong> di beranda depan untuk interaksi kecerdasan buatan, namun dibatasi hanya satu kali seminggu untuk pengguna gratis.</p>
+            <div class="grid-container">
+                <div class="card kelebihan">
+                    <h4><span class="badge success">Kelebihan</span></h4>
+                    <p>Sangat mobile, memiliki fitur bagi-pakai berupa gambar infografis menarik, koleksi podcast audio, dan asbabul wurud.</p>
+                </div>
+                <div class="card kekurangan">
+                    <h4><span class="badge danger">Kekurangan</span></h4>
+                    <p>Hampir seluruh fitur sekunder edukatif terkunci di balik sistem monetisasi akun premium/pro berbayar.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: DESKTOP -->
+        <div id="desktop-uiux" class="tab-content">
+            <h2>Review Interface Desktop & OneDrive Lokal</h2>
+            <p>Evaluasi menyeluruh terhadap sistem ruang kerja digital Windows 11 milik Nurhasanah.</p>
+            <div class="grid-container">
+                <div class="card kelebihan">
+                    <h4><span class="badge success">Analisis UI/UX Positif</span></h4>
+                    <p style="margin-top:10px;">Struktur breadcrumb folder sangat tertata, sinkronisasi cadangan OneDrive memberikan indikator centang hijau yang menenangkan kenyamanan user.</p>
+                </div>
+                <div class="card kekurangan">
+                    <h4><span class="badge danger">Analisis UI/UX Negatif</span></h4>
+                    <p style="margin-top:10px;">Kerapatan tulisan metadata ukuran file serta interupsi pop-up sistem notifikasi bawaan Windows berpotensi mengaburkan konsentrasi utama.</p>
+                </div>
+            </div>
+            <div class="score-box">
+                <p><i class="fas fa-poll"></i> Skor Total Rata-Rata Antarmuka: <strong>8,6 / 10</strong></p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- LOGIKA JAVASCRIPT FIXED (Anti-Macet) -->
+    <script>
+        // Perbaikan Fungsi Dropdown Menu Berjenjang
+        document.querySelectorAll('.has-dropdown').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const currentSubmenu = this.nextElementSibling;
+                const chevron = this.querySelector('.chevron');
+                
+                if (currentSubmenu) {
+                    currentSubmenu.classList.toggle('show-menu');
+                    if (chevron) chevron.classList.toggle('rotate-icon');
+                }
+            });
+        });
+
+        // Logika Perpindahan Halaman Konten (Tab Dinamis)
+        const links = document.querySelectorAll('.sub-item');
+        const sections = document.querySelectorAll('.tab-content');
+        const sidebar = document.getElementById('sidebar');
+
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = this.getAttribute('data-target');
+                
+                if(target) {
+                    // Reset class active pada menu
+                    links.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Sembunyikan semua tab & tampilkan yang dipilih
+                    sections.forEach(s => s.classList.remove('active'));
+                    document.getElementById(target).classList.add('active');
+                }
+                
+                // Otomatis tutup sidebar jika di handphone
+                sidebar.classList.remove('open');
+            });
+        });
+
+        // Kontrol Tombol Hamburger Perangkat Mobile
+        document.getElementById('mobileToggle').addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+    </script>
+</body>
+</html>
